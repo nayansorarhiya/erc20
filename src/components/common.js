@@ -1,9 +1,6 @@
 import React from "react";
-
 import Tabs from '@mui/material/Tabs';
 import Tab from '@mui/material/Tab';
-
-
 import OutlinedInput from '@mui/material/OutlinedInput';
 import InputLabel from '@mui/material/InputLabel';
 import InputAdornment from '@mui/material/InputAdornment';
@@ -31,18 +28,18 @@ export default function TabButton(props) {
 
 }
 
-export  function CommonInput(props) {
+export function CommonInput(props) {
     return (<>
-        <div>
-            <FormControl sx={{ mt: 5, width: '100%' }}>
-                <InputLabel >{props.label}</InputLabel>
-                <OutlinedInput
-                    value={props.value}
-                    onChange={props.function}
-                    startAdornment={<InputAdornment position="start">{props.tag}</InputAdornment>}
-                    label={props.label}
-                />
-            </FormControl>
-        </div>
+
+        <FormControl sx={{ mt: 5, width: '100%' }}>
+            <InputLabel >{props.label}</InputLabel>
+            <OutlinedInput
+                value={props.value}
+                onChange={props.function}
+                startAdornment={<InputAdornment position="start">{props.tag}</InputAdornment>}
+                label={props.label}
+            />
+        </FormControl>
+
     </>);
 }
