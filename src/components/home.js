@@ -1,9 +1,10 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import Box from '@material-ui/core/Box/Box';
 import Container from '@mui/material/Container';
 import Button from '@mui/material/Button';
+import {useParams} from 'react-router-dom';
 
-import { ethers } from "ethers";
+import { ethers, BigNumber, utils } from "ethers";
 import TabButton, { CommonInput } from "./common";
 import { walletConnect } from "./walletConnect";
 import { getERC20Contract } from '../contract/erc20contract';
@@ -31,12 +32,15 @@ function TabPanel(props) {
 
 function Home() {
 
+    let { contractAddress } = useParams();
+
     const [values, setValues] = useState({
         amount: '',
         toAddress: '',
         fromAddress: ''
     });
     const handleChange = (prop) => (event) => {
+        event.preventDefault();
         setValues({ ...values, [prop]: event.target.value });
     };
 
@@ -46,15 +50,11 @@ function Home() {
     };
 
 
-
-    console.log('hello');
-
-
     const [callFunctions, setCallFunction] = useState({
         decimals: 0,
         nameContract: '',
         symbol: '',
-        supply: ''
+        supply: '0'
     });
     const [wallet, setConnection] = useState(
         {
@@ -63,25 +63,15 @@ function Home() {
             balance: '0'
         });
 
-    const initialValues = async () => {
-        const provider = new ethers.providers.Web3Provider(window.ethereum);
-        const contract = getERC20Contract(provider.getSigner());
-        setCallFunction({
-            ...callFunctions,
-            decimals: (await contract.decimals()),
-            nameContract: await contract.name(),
-            symbol: await contract.symbol(),
-            supply: ethers.utils.parseUnits((await contract.totalSupply()).toString(), (await contract.decimals())).toString(),
-        });
-    }
+    console.log('hello');
 
     const setWallet = async () => {
         walletConnect();
         if (window.ethereum) {
             const provider = new ethers.providers.Web3Provider(window.ethereum);
-            const contract = getERC20Contract(provider.getSigner());
+            const contract = getERC20Contract(contractAddress,provider.getSigner());
             const signer = provider.getSigner();
-            const balance = ethers.utils.parseUnits((await contract.balanceOf(signer.getAddress())).toString(), callFunctions.decimals).toString();
+            const balance = BigNumber.from((await contract.balanceOf(signer.getAddress())).toString());
             const address = (await signer.getAddress()).toString();
             setConnection(
                 {
@@ -93,42 +83,56 @@ function Home() {
             );
         }
     }
-    walletConnect();
-    if (window.ethereum) {
-        window.onload = function () {
+
+    const initialValues = async () => {
+        if (window.ethereum) {
+            const provider = new ethers.providers.Web3Provider(window.ethereum);
+            const contract = getERC20Contract(contractAddress,provider.getSigner());
+            setCallFunction({
+                ...callFunctions,
+                decimals: (await contract.decimals()),
+                nameContract: await contract.name(),
+                symbol: await contract.symbol(),
+                supply: BigNumber.from(await contract.totalSupply()),
+            });
+
+        }
+    }
+
+    useEffect(() => {
             initialValues();
             setWallet();
-        };
-    }
+    },[]);
+
 
 
     async function contractCall() {
         try {
             const provider = new ethers.providers.Web3Provider(window.ethereum);
-            const contract = getERC20Contract(provider.getSigner());
+            const contract = getERC20Contract(contractAddress,provider.getSigner());
             switch (option) {
                 case 0:
-                    await contract.approve(values.toAddress, ethers.utils.parseUnits(values.amount, 18));
+                    await contract.approve(values.toAddress, ethers.utils.parseUnits(values.amount, callFunctions.decimals));
                     break;
                 case 1:
-                    await contract.decreaseAllowance(values.toAddress, ethers.utils.parseUnits(values.amount, 18));
+                    await contract.decreaseAllowance(values.toAddress, ethers.utils.parseUnits(values.amount, callFunctions.decimals));
                     break;
                 case 2:
-                    await contract.increaseAllowance(values.toAddress, ethers.utils.parseUnits(values.amount, 18));
+                    await contract.increaseAllowance(values.toAddress, ethers.utils.parseUnits(values.amount, callFunctions.decimals));
                     break;
                 case 3:
-                    await contract.transfer(values.toAddress, ethers.utils.parseUnits(values.amount, 18));
+                    await contract.transfer(values.toAddress, ethers.utils.parseUnits(values.amount, callFunctions.decimals));
                     break;
                 case 4:
-                    await contract.transferFrom(values.fromAddress, values.toAddress, ethers.utils.parseUnits(values.amount, 18));
+                    await contract.transferFrom(values.fromAddress, values.toAddress, ethers.utils.parseUnits(values.amount, callFunctions.decimals));
                     break;
                 case 5:
                     const allowanceValue = await contract.allowance(values.fromAddress, values.toAddress);
-                    alert(allowanceValue / 1000000000000000000);
+                    alert(utils.formatUnits(allowanceValue, callFunctions.decimals));
                     break;
                 case 6:
                     const balanceof = await contract.balanceOf(values.toAddress);
-                    alert(balanceof / 1000000000000000000);
+                    alert(utils.formatUnits(balanceof, callFunctions.decimals));
                     break;
                 default:
                     alert('Option is not selected');
@@ -140,16 +144,18 @@ function Home() {
 
     return (<>
         <Container>
+            <Box sx={{ display: 'flex', justifyContent: 'end', m: 3 }}>
+                <Button variant="contained" onClick={setWallet} >{wallet.text}</Button>
+            </Box>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 3, mb: 3, alignItems: 'center' }}>
+
+                <Box sx={{ whiteSpace: 'normal', overflowX: 'auto', mr: 3 }}>Address : {wallet.address}</Box>
+                <Box sx={{ whiteSpace: 'normal', overflowX: 'auto', }}>Balance : {utils.formatUnits(wallet.balance, callFunctions.decimals)}</Box>
+
+            </Box>
 
             <Box sx={{ width: '100%' }}>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 2, alignItems: 'center' }}>
-                    <Box>Address : {wallet.address}</Box>
-                    <Box>Balance : {wallet.balance}</Box>
-                    <Box>
-                        <Button variant="contained" onClick={setWallet} >{wallet.text}</Button>
-                    </Box>
 
-                </Box>
                 <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
                     <TabButton value={option} handleChange={handleChangeOption}></TabButton>
                 </Box>
@@ -183,11 +189,6 @@ function Home() {
                     <CommonInput value={values.toAddress} label='Account' tag='Address' function={handleChange('toAddress')} />
                 </TabPanel>
             </Box>
-            <Box sx={{ display: 'block', width: '100%' }}>
-
-
-
-            </Box>
 
             <Box sx={{ p: 3 }}>
                 <Button variant="contained" onClick={contractCall}>Confirm</Button>
@@ -196,7 +197,7 @@ function Home() {
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}><Box>Decimals:</Box> <Box>{callFunctions.decimals}</Box></Box>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}><Box>Name:</Box><Box>{callFunctions.nameContract}</Box></Box>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}><Box>Symbol:</Box><Box>{callFunctions.symbol}</Box></Box>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}><Box>Total Supply:</Box><Box>{callFunctions.supply}</Box></Box>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}><Box>Total Supply:</Box><Box>{utils.formatUnits(callFunctions.supply, callFunctions.decimals)}</Box></Box>
             </Box>
         </Container>
     </>);
