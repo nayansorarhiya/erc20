@@ -1,4 +1,4 @@
-import { ethers } from "ethers";
+// import { ethers } from "ethers";
 
 export const walletConnect = async () => {
     const reqChainId = "0x61";
@@ -29,7 +29,7 @@ export const walletConnect = async () => {
             }
         }
 
-        const provider = new ethers.providers.Web3Provider(window.ethereum);
+        // const provider = new ethers.providers.Web3Provider(window.ethereum);
         await window.ethereum.request({ method: 'eth_requestAccounts' });
 
     }
