@@ -34,8 +34,8 @@ export function CommonInput(props) {
         <FormControl sx={{ mt: 5, width: '100%' }}>
             <InputLabel >{props.label}</InputLabel>
             <OutlinedInput
-                value={props.values}
-                onChange={props.function}
+                value={props.value}
+                onChange={props.onChangeFunction}
                 startAdornment={<InputAdornment position="start">{props.tag}</InputAdornment>}
                 label={props.label}
             />
